@@ -6,8 +6,6 @@
 
 A mitochondrion is a membrane-bound organelle found in the cytoplasm of almost all eukaryotic cells (cells with clearly defined nuclei), the primary function of which is to generate large quantities of energy in the form of adenosine triphosphate (ATP). Mitochondria are typically round to oval in shape and range in size from 0.5 to 10 μm. In addition to producing energy, mitochondria store calcium for cell signaling activities, generate heat, and mediate cell growth and death [1](https://www.britannica.com/science/mitochondrion)
 
-![mitochondrion](https://github.com/user-attachments/assets/fb93fd62-eb69-4482-b969-82995056c969)
-
 **Mitochondrial Toxicity: Definition and Impact**
 
 Mitochondrial Toxicity can be broadly defined as damage or dysfunction of the mitochondria, which can lead to various health problems, including muscle weakness, pancreatitis, and liver issues. 
