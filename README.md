@@ -5,13 +5,14 @@
 * [Introduction](#introduction)
 * [Project Overview](#project-overview)
 * [Getting Started](#getting-started)
+* [Breakdown Of Implementation Process](#breakdown-of-implementation-process)
 
 
 ## Introduction
 
 **What are Mitochondria?**
 
-A mitochondrion is a membrane-bound organelle found in the cytoplasm of almost all eukaryotic cells (cells with clearly defined nuclei), the primary function of which is to generate large quantities of energy in the form of adenosine triphosphate (ATP). Mitochondria are typically round to oval in shape and range in size from 0.5 to 10 μm. In addition to producing energy, mitochondria store calcium for cell signaling activities, generate heat, and mediate cell growth and death [1](https://www.britannica.com/science/mitochondrion)
+A mitochondrion is a membrane-bound organelle found in the cytoplasm of almost all eukaryotic cells (cells with clearly defined nuclei), the primary function of which is to generate large quantities of energy in the form of adenosine triphosphate (ATP). Mitochondria are typically round to oval in shape and range in size from 0.5 to 10 μm. In addition to producing energy, mitochondria store calcium for cell signaling activities, generate heat, and mediate cell growth and death [1](https://www.britannica.com/science/mitochondrion).
 
 **Mitochondrial Toxicity: Definition and Impact**
 
@@ -44,6 +45,9 @@ Assay specific threshold wasn't specified for SR-MMP (which is a subset of Tox21
 
 **Prerequisites**
 - [Miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install) or Anaconda installed on your system
+- [Docker](https://docs.docker.com/engine/install/)
+- Git Large File Storage (LFS) `conda install git-lfs -c conda-forge`
+- GitLFS Activated `git-lfs install`
 
 **Installation Guide**
 
@@ -67,6 +71,7 @@ conda activate myenv  # Check environment.yml for the name
 **Additional Notes**
 - this guide will be updated as the project goes on.
 
+## Breakdown Of Implementation Process
 
 
 
