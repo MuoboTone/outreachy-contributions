@@ -29,9 +29,11 @@ This project builds a predictive machine learning model trained on the TOX 21's 
 
 
 **Dataset**
+
 There are 12 toxic substances in Tox21, including the stress response effects (SR) and the nuclear receptor effects (NR). The SR includes five types (ARE, HSE, ATAD5, MMP, p53), and NR includes seven types (ER-LBD, ER, Aromatase, AhR, AR, AR-LBD, PPAR). Both the SR and NR effects are closely related to human health. For example, the activation of nuclear receptors can disrupt endocrine system function, and the activation of stress response pathways can lead to liver damage or cancer. The Tox21 database contains the results of high-throughput screening for these 12 toxic [effects](https://www.mdpi.com/1420-3049/24/18/3383). 
 
 **Data Collection Method**
+
 The data was collected using a multiplexed [two end points in one screen; MMP and adenosine triphosphate (ATP) content] quantitative high throughput screening (qHTS) approach combined with informatics tools to screen the Tox21 library of 10,000 compounds (~ 8,300 unique chemicals) at 15 concentrations each in triplicate to identify chemicals and structural features that are associated with changes in MMP in HepG2 cells. This allowed them generate a dataset to assess how chemicals reduce mitochondrial membrane potential [MMP](https://pmc.ncbi.nlm.nih.gov/articles/PMC4286281/). 
 
 The Tox21 10K compound library, is a collaborative effort by several U.S. federal agencies (EPA, NIH, FDA, and others) to screen chemicals for toxicity-related biological activity. 
