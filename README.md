@@ -257,98 +257,101 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
 | DrugTax | Taxonomy classifier | 163 | SMILES | - Classifies molecules as organic/inorganic kingdom<br>- Includes detailed subclass information<br>- Counts chemical elements (carbons, nitrogens, etc.)<br>- Focuses on taxonomic classification of molecules          |
 | Morgan Fingerprints (ECFP4) | Circular fingerprints | 2048 | SMILES | - Also known as extended connectivity fingerprints<br>- Circular search pattern from each atom    |
 
-### Code Breakdown: [featurize.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/featurize.py)**
+#### Code Breakdown: [featurize.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/featurize.py)
 
 - Step 1: Import Required Libraries
   ```python
-  from ersilia import ErsiliaModel
-  import os
-  import pandas as pd
+        from ersilia import ErsiliaModel
+        import os
+        import pandas as pd
   ```
-- Step 2: Define the Featurization Function
-  ```python
-  def featurize(model_ID, dataset_path, smiles_column):
-  ```
-The function takes three parameters:
-
-- model_ID - the identifier for the specific Ersilia model to use
-- dataset_path - path to the input dataset CSV file
-- smiles_column - name of the column containing SMILES strings in the dataset
+  - Step 2: Define the Featurization Function
+    ```python
+        def featurize(model_ID, dataset_path, smiles_column):
+    ```
+      The function takes three parameters:
+      
+      - model_ID - the identifier for the specific Ersilia model to use
+      - dataset_path - path to the input dataset CSV file
+      - smiles_column - name of the column containing SMILES strings in the dataset
 
 - Step 3: Model Setup and Data Loading
-  ```python
-  mdl = ErsiliaModel(model_ID)
-  mdl.serve()
-  #load data
-  df = pd.read_csv(f"{dataset_path}") 
-  # Extract just the Drug column containing SMILES
-  smiles_df = df[[smiles_column]]
-  # Save smiles to new CSV file
-  smiles_df.to_csv("smiles_only.csv", index=False)
-  ```
+     ```python
+     mdl = ErsiliaModel(model_ID)
+     mdl.serve()
+     
+     #load data
+     df = pd.read_csv(f"{dataset_path}")
+     
+     # Extract just the Drug column containing SMILES
+     smiles_df = df[[smiles_column]]
+     
+     # Save smiles to new CSV file
+     smiles_df.to_csv("smiles_only.csv", index=False)
+     ```
 
 - Step 4: Prepare Output File
-  ```python
-  #create an empty CSV file to store featurized data
-    pd.DataFrame().to_csv('featurized_data.csv', index=False)
-    datasets = {
-            "smiles_only.csv": "featurized_data.csv",
-        }
-  ```
+     ```python
+     #create an empty CSV file to store featurized data
+     pd.DataFrame().to_csv('featurized_data.csv', index=False)
+     datasets = {
+               "smiles_only.csv": "featurized_data.csv",
+           }
+     ```
   Sets up a dictionary mapping input files to output files (currently just one pair)
 
 - Step 5: Run the Featurization
     ```python
-    for input_file, output_file in datasets.items():
-        # Check if the input file exists
-        if os.path.exists(input_file): 
+          for input_file, output_file in datasets.items():
+              # Check if the input file exists
+              if os.path.exists(input_file): 
 
-            # Run the model/featurization on the input file
-            # Generating output to the specified output file
-            mdl.run(input=input_file, output=output_file)
-        else:
-            # Raises an error if the input file is missing
-            raise FileNotFoundError(f"Input file '{input_file}' not found!")
+                  # Run the model/featurization on the input file
+                  # Generating output to the specified output file
+                  mdl.run(input=input_file, output=output_file)
+              else:
+                  # Raises an error if the input file is missing
+                  raise FileNotFoundError(f"Input file '{input_file}' not found!")
     ```
 
 - Step 6: Clean Up Temporary Files
-    ```python
-    try:
-        os.remove("smiles_only.csv")
-    except FileNotFoundError:
-        print(f"File not found")
-        mdl.close()
-    except PermissionError:
-        print(f"Permission denied to delete file")
-        mdl.close()
-    except Exception as e:
-        print(f"Error deleting file: {e}")
-        mdl.close()
-    ```
-
-- Step 7: Close the Model and Confirm Completion
   ```python
-  #close served model
-  mdl.close() 
-  print("Featurization Complete!")
+       try:
+           os.remove("smiles_only.csv")
+       except FileNotFoundError:
+           print(f"File not found")
+           mdl.close()
+       except PermissionError:
+           print(f"Permission denied to delete file")
+           mdl.close()
+       except Exception as e:
+           print(f"Error deleting file: {e}")
+           mdl.close()
   ```
 
-  ### Featurization Output
+- Step 7: Close the Model and Confirm Completion
+     ```python
+     #close served model
+     mdl.close() 
+     print("Featurization Complete!")
+     ```
 
- #### Morgan Fingerprints Output Format
+### Featurization Output
+
+#### Morgan Fingerprints Output Format
 | Column Name  | Description |
 |--------------|-------------|
 | **Key**      | Unique identifier for each compound |
 | **input**    | SMILES string representation of the compound |
-| **dim_0000 | Count of substructure 1 in the molecule (integer ≥ 0) |
-| **dim_0002 | Count of substructure 2 in the molecule (integer ≥ 0) |
+| **dim_0000** | Count of substructure 1 in the molecule (integer ≥ 0) |
+| **dim_0001** | Count of substructure 2 in the molecule (integer ≥ 0) |
 | ...          | ... |
-| **dim_N** | Count of substructure N (where `N` = 2047) |
+| **dim_2047** | Count of substructure 2048 |
 
 *Note: Morgan Counts Fingerprint outputs **integer counts** for each substructure in the molecule, generated with radius 3.*
 
- #### DrugTax Output Format
- | Column Name | Description |
+#### DrugTax Output Format
+| Column Name | Description |
 |-------------|-------------|
 | Key | Unique identifier for each compound |
 | input | SMILES string representation of the compound |
@@ -359,7 +362,167 @@ The function takes three parameters:
 
 *Note: DrugTax output includes 163 features representing taxonomy classification (organic/inorganic), subclasses, and counts of chemical elements (carbons, nitrogens, etc.).*
   
- 
+### Model Building & Evaluation
+
+**ML Algorithm**
+
+1. Morgan Fingerprint Model
+     
+     i. FLAML AutoML - estimators (LightGBM and RandomForest)
+     
+     ii. XGBoostClassifier
+     
+2. Drug Tax Model
+       
+     i. FLAML AutoML - estimator (LightGBM)
+
+#### Code Breakdown: [Model Training](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/Model%20Training/train_morgan_counts_model.ipynb)
+
+- Step 1: Import Required Libraries
+      ```python
+      from imblearn.over_sampling import SMOTE
+      from xgboost import XGBClassifier
+      import pandas as pd
+      from sklearn.metrics import classification_report
+      import joblib
+      from tdc import Evaluator
+      ```
+   
+- Step 2: Load and prepare data.
+   ```python
+   # Get data
+   train_data = pd.read_csv('../../data/MorganCount/tox21_train_featurized.csv').dropna()
+   valid_data = pd.read_csv('../../data/MorganCount/tox21_valid_featurized.csv').dropna()
+   test_data = pd.read_csv('../../data/MorganCount/tox21_test_featurized.csv').dropna()
+   
+   # Get X(features) and Y(target)
+   X_train, y_train = train_data.filter(regex='^dim_.*'), train_data['Y']
+   X_test, y_test = test_data.filter(regex='^dim_.*'), test_data['Y']
+   X_valid, y_valid = valid_data.filter(regex='^dim_.*'), valid_data['Y']
+   ```
+    selected all columns starting with "dim_" from the featurized dataset.
+      
+- Step 3: Handle Class Imbalance with SMOTE
+  ```python
+      # Use SMOTE to oversample minority class
+      smote = SMOTE(random_state=42)
+      X_res, y_res = smote.fit_resample(X_train, y_train)
+  ```
+  SMOTE (Synthetic Minority Over-sampling Technique) is used to address class imbalance in datasets. It works by generating synthetic samples of the minority class rather than simply duplicating existing ones.
+
+- Step 4: Initialize and Train XGBoost Model
+  ```python
+     # Train the model
+     model = XGBClassifier(
+     n_estimators=200,
+     max_depth=7,               # Balance complexity
+     learning_rate=0.05,        # Slower learning
+     scale_pos_weight=8,        # Adjust for class imbalance 
+     random_state=42,
+     early_stopping_rounds=10,  # Prevent overfitting
+     )
+   
+     model.fit(X_res, y_res, eval_set=[(X_valid, y_valid)], verbose=True)
+  ```
+  | Parameter             | Value  | Meaning |
+  |-------------------------|--------|-------------------------|
+  | `n_estimators`          | 200    | Number of decision trees (boosting rounds). More trees = stronger model but slower training. |
+  | `max_depth`             | 7      | Maximum depth of each tree. Deeper trees learn complex patterns but may overfit. |
+  | `learning_rate`    | 0.05   | How fast the model learns. Lower = more careful updates (better generalization but slower training).|
+  | `random_state`          | 42     | Fixes randomness for reproducible results (e.g., same output every run). |
+  | `early_stopping_rounds` | 10     | Stops training if validation score doesn't improve for 10 rounds (prevents overfitting). |
+
+  *Why These Values?*
+      
+  *n_estimators=200: A moderate number for balance between performance and speed.*
+      
+  *max_depth=7: Deep enough to learn relationships but not too deep to overfit.*
+      
+  *learning_rate=0.05: Small steps to avoid overshooting the best solution.*
+      
+  *early_stopping_rounds=10: Gives the model a few chances to improve before stopping.*
+  
+- Step 5: Make Predictions and View Results
+     ```python
+     # Get prediction result
+      y_test_pred = model.predict(X_test)
+   
+      # Display metrics
+      print(classification_report(y_test, y_test_pred))
+     ```
+- Step 6: Get Evaluation Metrics
+     ```python
+     from typing import Dict, Any
+     def evaluate_model(y_true, y_pred_proba, threshold: float = 0.5) -> Dict[str, float]:
+          metrics = {
+              'ROC-AUC': {'name': 'ROC-AUC', 'kwargs': {}},
+              'PR-AUC': {'name': 'PR-AUC', 'kwargs': {}},
+              'Accuracy': {'name': 'Accuracy', 'kwargs': {'threshold': threshold}},
+              'Precision': {'name': 'Precision', 'kwargs': {'threshold': threshold}},
+              'Recall': {'name': 'Recall', 'kwargs': {'threshold': threshold}},
+              'F1': {'name': 'F1', 'kwargs': {'threshold': threshold}}
+          }
+          results = {}
+          for metric_name, config in metrics.items():
+              evaluator = Evaluator(name=config['name'])
+              score = evaluator(y_true, y_pred_proba, **config['kwargs'])
+              results[metric_name] = score
+              print(f"{metric_name}: {score:.4f}")
+          
+          return results
+   
+      y_pred_proba = model.predict_proba(X_test)[:, 1]
+      y_true = y_test
+      
+      evaluation_results = evaluate_model(y_true, y_pred_proba)
+     ```
+
+- Step 7. Save the Trained Model
+     ```python
+      # Save model
+      model_filename = 'Morgan_trained_model.joblib'
+      joblib.dump(model, model_filename)
+     ```
+### Results
+### 🔍 Model Performance Comparison
+
+| Metric            | Class | Morgan Model | DrugTax Model|
+|-------------------|-------|---------|---------|
+| **Precision**     | 0     | 0.90    | 0.90    |
+|                   | 1     | 0.67    | 0.54    |
+| **Recall**        | 0     | 0.96    | 0.93    |
+|                   | 1     | 0.44    | 0.44    |
+| **F1-Score**      | 0     | 0.93    | 0.91    |
+|                   | 1     | 0.53    | 0.48    |
+| **Accuracy**      | (0&1)  | 0.88    | 0.85    |
+| **ROC-AUC**       |       | 0.82    | 0.89 |
+
+**Observations**
+- Both models had room for improvement. Although the Morgan Model has a higher ROC-AUC score(0.89-0.82).
+- Precision and recall for both models is poor leading to a low overall F1 score (0.48(Drugtax) and 0.53 (Morgan))
+
+These results led me use a more complex embedding to featurize my dataset. 
+
+[Ersilia Compound Embeddings](https://github.com/ersilia-os/eos2gw4):
+   
+- The embeddings combine both physicochemical properties and bioactivity information. This fusion enables the model to capture complex relationships that might be missed by traditional descriptors alone.
+- By incorporating Grover, Mordred, and ECFP descriptors during training, the featurizer captures both traditional substructural patterns and more nuanced chemical properties.
+       
+| Featurizer          | Type               | Number of Features | Input                     | Key Characteristics                          |
+|---------------------|--------------------|--------------------|---------------------------|---------------------------------------------|
+| Ersilia Embeddings  | Learned Embeddings | 1024   | SMILES strings | - Pre-trained deep learning representations<br>- Captures chemical structure and biological activity
+
+#### Ersilia Embeddings Output Format
+| Column Name | Description |
+|-------------|-------------|
+| Key | Unique identifier for each compound |
+| input | SMILES string representation of the compound |
+| feature_0000 | First dimension of the embedding vector (continuous float) |
+| feature_0001 | Second dimension of the embedding vector (continuous float) |
+| ... | ... |
+| feature_1023 | Last dimension of the embedding vector |
+  
+
   
 
 
