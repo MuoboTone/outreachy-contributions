@@ -80,9 +80,6 @@ conda activate myenv  # Check environment.yml for the name
 ```
 
 
-**Additional Notes**
-- this guide will be updated as the project goes on.
-
 ## Breakdown Of Implementation Process
 
 This section includes the process of setting up my conda environment, downloading the Tox21 SR-MMP dataset, and featurizing it using DrugTax.
@@ -107,7 +104,6 @@ ersilia fetch eos24ci
 - Using [get_data_notebook.ipynb](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/get_data_notebook.ipynb)
 
 ```python
-#first I printed the label list to confirm the name of my assay of interest
 
 from tdc.utils import retrieve_label_name_list 
 label_list = retrieve_label_name_list('Tox21')
@@ -208,6 +204,7 @@ Since Tox21 involves small-molecule bioactivity, I could choose between using si
 2. [DrugTax: Drug Taxonomy](https://github.com/ersilia-os/eos24ci):
    - can give me insights into why a compound might be toxic
    - but it may miss complex structural alerts not captured by descriptors.
+
 
 For accuracy, similarity-based methods (fingerprints) usually perform better in small-molecule bioactivity tasks, but for interpretability, descriptor-based models provide a better look into toxicity.
 For these reasons, I decided to combine both featurization techniques. 
