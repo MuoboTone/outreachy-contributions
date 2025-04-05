@@ -29,9 +29,36 @@ Mitochondrial Dysfunction is linked to:
 This project builds a predictive machine learning model trained on the TOX 21's SR-MMP dataset, which contains qualitative toxicity measurements for 5,810 compounds. Given a drug SMILES string, the model predicts it's mitochondrial toxicity. 
 
 
-## Dataset
+## Dataset Overview
 
 There are 12 toxic substances in Tox21, including the stress response effects (SR) and the nuclear receptor effects (NR). The SR includes five types (ARE, HSE, ATAD5, MMP, p53), and NR includes seven types (ER-LBD, ER, Aromatase, AhR, AR, AR-LBD, PPAR). Both the SR and NR effects are closely related to human health. For example, the activation of nuclear receptors can disrupt endocrine system function, and the activation of stress response pathways can lead to liver damage or cancer. The Tox21 database contains the results of high-throughput screening for these 12 toxic [effects](https://www.mdpi.com/1420-3049/24/18/3383). 
+
+### General Information
+- Source: [Tox21 Data Challenge](https://tripod.nih.gov/tox21/challenge/data.jsp)
+- Task: Binary classification (predicting toxicity)
+- Target Variable: Toxicity label (1 = toxic, 0 = non-toxic)
+
+### **Dataset Statistics**  
+
+| Attribute                | Value                     |
+|--------------------------|---------------------------|
+| **Total Samples**        | 5,810                     |
+| **Training Samples**     | 4,067 (~70%)                    |
+| **Test Samples**         | 1,162 (~20%)                    |
+| **Validation Samples**   | 581 (~10%)                       |
+| **Positive Class (Toxic)** | 918 (~15.8%)                   |
+| **Negative Class (Non-Toxic)** | 4,892  (~84.2%)            |
+
+**Key Notes**  
+- **Imbalanced dataset** (more non-toxic samples).  
+- Pre-split into **70% train** / **20% test** / **10% validation**.   
+
+### Dataset Structure
+| Column Name | Data Type | Description |
+|-------------|-----------|-------------|
+| **Drug_ID** | `object`  | Unique row identifier (e.g., compound ID) |
+| **Drug**    | `object`  | SMILES notation of the chemical compound |
+| **Y**       | `float64` | Binary label: `0` (non-toxic) or `1` (toxic) |
 
 ### Data Collection Method
 
@@ -78,11 +105,26 @@ conda env create -f environment.yml
 ```bash
 conda activate myenv  # Check environment.yml for the name
 ```
-
+4. Verify set-up
+```bash
+conda list
+```
 
 ## Breakdown Of Implementation Process
+1. **Data Acquisition**  
+   - Downloaded the Tox21 SR-MMP dataset from the official source.  
 
-This section includes the process of setting up my conda environment, downloading the Tox21 SR-MMP dataset, and featurizing it using DrugTax.
+2. **Exploratory Data Analysis (EDA)**  
+   - Analyzed dataset structure, class imbalance, and missing values.    
+
+3. **Featurization with Ersilia Models**  
+   - Used [Ersilia](https://ersilia.io/) models to generate molecular embeddings/features.  
+   - Processed SMILES strings into numerical representations for ML.  
+
+4. **Model Building & Evaluation**  
+   - Trained binary classification models (XGBoost).  
+   - Addressed class imbalance via resampling/weighted loss.  
+   - Evaluated performance using AUC-ROC, precision-recall, and F1-score.
 
 ### Environment Setup
 
@@ -95,13 +137,10 @@ pip install pyTDC
 
 # Install Ersilia Model Hub for featurization
 pip install ersilia
-
-# I fetched the DrugTax model from ersilia hub
-ersilia fetch eos24ci
 ```
-### Downloading Tox21 SR-MMP Dataset
+#### 1. Data Acquisition
 
-- Using [get_data_notebook.ipynb](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/get_data_notebook.ipynb)
+- Using [get_data.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/get_data.py)
 
 ```python
 
@@ -110,7 +149,7 @@ label_list = retrieve_label_name_list('Tox21')
 
 print(f"Available Assays are: {label_list}")
 ```
-- Next I loaded the data from TDC and split it using TDC's default split method
+- Load the data from TDC and split it using TDC's default split method
 
 ```python
 from tdc.single_pred import Tox
@@ -122,7 +161,7 @@ train_data = split['train']
 valid_data = split['valid']
 test_data = split['test']
 ```
-- After loading the datasets I downloaded it into seperate csv files
+- Download data into separate CSV files
 
 ```python
 # Save all splits
@@ -134,43 +173,39 @@ split['test'].to_csv("tox21_test.csv", index=False)
 full_data = data.get_data()
 full_data.to_csv("tox21_full.csv", index=False)
 
-#outputs are csv files for each split and the entire dataset
+#outputs are CSV files for each split and the entire dataset
 ```
-- Next i got some information about the data
-
+#### 2. Exploratory Data Analysis (EDA)
+- [initial_EDA.ipynb](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/exploratory%20analysis/initial_EDA.ipynb)
 ```python
-import pandas as pd
-
 df = pd.read_csv('data/tox21_full.csv')
 df.info()
-
-#output is info about the size of the data and all columns
 ```
+- Check for null values
+```python
+df = pd.read_csv("../data/tox21_test.csv")
+sns.heatmap(df.isnull(), cbar=False, cmap="viridis")
+print(df.isnull().sum())
+plt.show()
 ```
-<class 'pandas.core.frame.DataFrame'>
-RangeIndex: 5810 entries, 0 to 5809
+```output
 Data columns (total 3 columns):
  #   Column   Non-Null Count  Dtype  
 ---  ------   --------------  -----  
  0   Drug_ID  5810 non-null   object 
  1   Drug     5810 non-null   object 
  2   Y        5810 non-null   float64
-dtypes: float64(1), object(2)
-memory usage: 136.3+ KB
 ```
-
-### Justification for Split Choice:
-
-- After carrying out minimal exploratory analysis on the dataset, I realized there was class imbalance in the target variable (Y column).
-
+- Classes split ratio
 ```output
 Y
 0.0    4892
 1.0     918
 Name: count, dtype: int64
 ```
-- I discovered that TDC's random split method was stratified.
-- The stratified splitting method is important because imbalance between negative/positive classes could lead to biased model evaluation if splits had different imbalance ratios.
+**Split Method**
+- Stratified.
+- The stratified splitting method is important because an imbalance between negative/positive classes could lead to biased model evaluation if splits had different imbalance ratios.
 - It also prevents a scenario where the minority class samples might be underrepresented in training. 
 
 Here's the current ratio 
@@ -180,116 +215,123 @@ Train class ratios:
  Y
 0.0    3439
 1.0     628
-Name: count, dtype: int64
+
 Test class ratios:
  Y
 0.0    981
 1.0    181
-Name: count, dtype: int64
+
 Validation class ratios:
  Y
 0.0    472
 1.0    109
-Name: count, dtype: int64
 ```
-### Featurization
+- Check for data leakage between splits
+```python
+train = set(df_train['Drug'])  
+val = set(df_valid['Drug'])
+test = set(df_test['Drug'])
 
-### Justification for DrugTax: Drug taxonomy:
-Since Tox21 involves small-molecule bioactivity, I could choose between using similarity-based methods (using structural fingerprints) and interpretable models (using physicochemical descriptors). My choices were 
+assert len(train & val) == 0, "Train/Val overlap detected!"
+assert len(train & test) == 0, "Train/Test overlap detected!"
+assert len(val & test) == 0, "Val/Test overlap detected!"
+```
+### Featurization with Ersilia Models
 
-1. [Morgan fingerprints in binary form](https://github.com/ersilia-os/eos4wt0):
-   - can help me find structurally similar compounds with compounds known for mitochondrial toxicity
-   - the model could learn toxicity patterns from similar substructures
+When selecting a featurizer for the Tox21 dataset, I considered several factors to ensure that the model can effectively capture the chemical information relevant to toxicity.
+- Substructure Sensitivity: The featurizer should capture chemical substructures and functional groups that are known to influence toxicity.
+- Computational Efficiency: While some deep learning-based representations can be powerful, they require more computational resources compared to traditional fingerprint methods.
+- Preprocessing Requirements: I didn't want to choose a model that requires additional steps like normalization, scaling, or encoding categorical variables.
   
+1. [Morgan Counts Fingerprints](https://github.com/ersilia-os/eos5axz):
+   
+   - Widely used, proven, and trusted in QSAR, virtual screening, and toxicity prediction tasks.
+   - Circular substructure encoding around each atom helps the model recognize functional groups and reactive sites.
+     
 2. [DrugTax: Drug Taxonomy](https://github.com/ersilia-os/eos24ci):
-   - can give me insights into why a compound might be toxic
-   - but it may miss complex structural alerts not captured by descriptors.
+   
+   - Outputs features based on a molecule’s chemical taxonomy and composition, these are highly interpretable, which is a big plus when understanding why a compound might be toxic.
+       
+| Featurizer | Type | Number of Features | Input | Key Characteristics |
+|------------|------|-------------------|-------|---------------------|
+| DrugTax | Taxonomy classifier | 163 | SMILES | - Classifies molecules as organic/inorganic kingdom<br>- Includes detailed subclass information<br>- Counts chemical elements (carbons, nitrogens, etc.)<br>- Focuses on taxonomic classification of molecules          |
+| Morgan Fingerprints (ECFP4) | Circular fingerprints | 2048 | SMILES | - Also known as extended connectivity fingerprints<br>- Circular search pattern from each atom    |
 
+### Code Breakdown: [featurize.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/featurize.py)**
 
-For accuracy, similarity-based methods (fingerprints) usually perform better in small-molecule bioactivity tasks, but for interpretability, descriptor-based models provide a better look into toxicity.
-For these reasons, I decided to combine both featurization techniques. 
+- Step 1: Import Required Libraries
+  ```python
+  from ersilia import ErsiliaModel
+  import os
+  import pandas as pd
+  ```
+- Step 2: Define the Featurization Function
+  ```python
+  def featurize(model_ID, dataset_path, smiles_column):
+  ```
+The function takes three parameters:
 
-Unfortunately, I've been unable to get the Morgan fingerprints model to fetch into my computer, so for now, all I have is DrugTax featurized data, but I will keep trying to run eos4wt0.
+- model_ID - the identifier for the specific Ersilia model to use
+- dataset_path - path to the input dataset CSV file
+- smiles_column - name of the column containing SMILES strings in the dataset
 
+- Step 3: Model Setup and Data Loading
+  ```python
+  mdl = ErsiliaModel(model_ID)
+  mdl.serve()
+  #load data
+  df = pd.read_csv(f"{dataset_path}") 
+  # Extract just the Drug column containing SMILES
+  smiles_df = df[[smiles_column]]
+  # Save smiles to new CSV file
+  smiles_df.to_csv("smiles_only.csv", index=False)
+  ```
 
-## Using DrugTax (eos24ci) from ersilia model hub
+- Step 4: Prepare Output File
+  ```python
+  #create an empty CSV file to store featurized data
+    pd.DataFrame().to_csv('featurized_data.csv', index=False)
+    datasets = {
+            "smiles_only.csv": "featurized_data.csv",
+        }
+  ```
+  Sets up a dictionary mapping input files to output files (currently just one pair)
 
-```python
-#NOTE: This script runs successfully I already installed Ersilia Model Hub and fetched the model using the CLI
+- Step 5: Run the Featurization
+    ```python
+    for input_file, output_file in datasets.items():
+        # Check if the input file exists
+        if os.path.exists(input_file): 
 
-# import main class
-from ersilia import ErsiliaModel
-import os
-```
-- Next I instantiated the model and served it
+            # Run the model/featurization on the input file
+            # Generating output to the specified output file
+            mdl.run(input=input_file, output=output_file)
+        else:
+            # Raises an error if the input file is missing
+            raise FileNotFoundError(f"Input file '{input_file}' not found!")
+    ```
 
-```python
-mdl = ErsiliaModel("model_ID") #use your model id
-mdl.serve()
-```
-- Extracted the "Drug" column from my dataset and made it its own csv file to serve as input
+- Step 6: Clean Up Temporary Files
+    ```python
+    try:
+        os.remove("smiles_only.csv")
+    except FileNotFoundError:
+        print(f"File not found")
+        mdl.close()
+    except PermissionError:
+        print(f"Permission denied to delete file")
+        mdl.close()
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        mdl.close()
+    ```
 
-```python
-import pandas as pd
-
-#load your data
-path = "" #replace with dataset file name without the csv
-df = pd.read_csv(f"{path}.csv") 
-
-# Extract just the Drug column containing SMILES
-smiles_df = df[["SMILES_column"]] #replace with name of column holding smiles
-
-# Save to new CSV file
-smiles_df.to_csv("smiles_only.csv", index=False) #creates a new csv file containing only the smile strings
-```
-- Created a dictionary to map input file to it's corresponding output file
-
-```python
-#defines a dictionary that maps input files to their corresponding output files for featurization
-
-pd.DataFrame().to_csv('smiles_featurized.csv', index=False) #create an empty CSV file
-
-datasets = {
-        "smiles_only.csv": "smiles_featurized.csv",
-    }
-```
-- Iterated through the datasets dictionary and ran the model/featurization on the input file
-
-```python
-for input_file, output_file in datasets.items():
-    if os.path.exists(input_file): # Check if the input file exists
-
-        # Run the model/featurization on the input file
-        # Generating output to the specified output file
-        mdl.run(input=input_file, output=output_file)
-    else:
-        raise FileNotFoundError(f"Input file '{input_file}' not found!")  # Raise an error if the input file is missing
-```
-
-- Next I merged the featurized data to my original dataset using the "Drug" and "input" columns 
-```python
-import pandas as pd
-original_data = pd.read_csv(f"{path}.csv")
-features = pd.read_csv("smiles_featurized.csv")
-
-# Merge data on column  containing SMILES
-combined_data = pd.merge(
-    original_data,
-    features,
-    left_on="Drug",    # Column in original dataset
-    right_on="input",  # Column in DrugTax output
-    how="left"         # Keeps all rows from original_data
-)
-
-
- 
-combined_data.to_csv(f"{path}_featurized.csv", index=False)  #create an empty CSV file and adds combined data
-```
-- Finally I closed the model 
-
-```python
-mdl.close() #close served model
-```
+- Step 7: Close the Model and Confirm Completion
+  ```python
+  #close served model
+  mdl.close() 
+  print("Featurization Complete!")
+  ```
 
 
 
