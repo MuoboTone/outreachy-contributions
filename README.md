@@ -333,6 +333,35 @@ The function takes three parameters:
   print("Featurization Complete!")
   ```
 
+  ### Featurization Output
+
+ #### Morgan Fingerprints Output Format
+| Column Name  | Description |
+|--------------|-------------|
+| **Key**      | Unique identifier for each compound |
+| **input**    | SMILES string representation of the compound |
+| **dim_0000 | Count of substructure 1 in the molecule (integer ≥ 0) |
+| **dim_0002 | Count of substructure 2 in the molecule (integer ≥ 0) |
+| ...          | ... |
+| **dim_N** | Count of substructure N (where `N` = 2047) |
+
+*Note: Morgan Counts Fingerprint outputs **integer counts** for each substructure in the molecule, generated with radius 3.*
+
+ #### DrugTax Output Format
+ | Column Name | Description |
+|-------------|-------------|
+| Key | Unique identifier for each compound |
+| input | SMILES string representation of the compound |
+| feature_1 | First taxonomic or molecular feature (binary 0/1) |
+| feature_2 | Second taxonomic or molecular feature (binary 0/1) |
+| ... | ... |
+| feature_163 | Last taxonomic or molecular feature (binary 0/1) |
+
+*Note: DrugTax output includes 163 features representing taxonomy classification (organic/inorganic), subclasses, and counts of chemical elements (carbons, nitrogens, etc.).*
+  
+ 
+  
+
 
 
 
