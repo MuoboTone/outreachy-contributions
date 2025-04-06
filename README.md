@@ -7,7 +7,7 @@
 * [Getting Started](#getting-started)
 * [Breakdown Of Implementation Process](#breakdown-of-implementation-process)
 * [Featurization with Ersilia Models](#featurization-with-ersilia-models)
-* [Model Building and Evaluation](#model-building-and-evaluation)
+* [Model Training and Evaluation](#model-training-and-evaluation)
 * [Stretch Tasks](#stretch-task)
 * [References](#references)
 
@@ -113,7 +113,7 @@ conda list
 
 ## Breakdown Of Implementation Process
 1. **Data Acquisition**  
-   - Downloaded the Tox21 SR-MMP dataset from the official source.  
+   - Downloaded the Tox21 SR-MMP dataset from TDC.  
 
 2. **Exploratory Data Analysis (EDA)**  
    - Analyzed dataset structure, class imbalance, and missing values.    
@@ -123,7 +123,7 @@ conda list
    - Processed SMILES strings into numerical representations for ML.  
 
 4. **Model Building & Evaluation**  
-   - Trained binary classification models (XGBoost).  
+   - Trained binary classification models using FLAML AutoMl, RandomForest and XGBoost.  
    - Addressed class imbalance via resampling/weighted class.  
    - Evaluated performance using AUC-ROC, precision-recall, and F1-score.
 
@@ -277,19 +277,20 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
    - smiles_column - name of the column containing SMILES strings in the dataset
 
 - Step 3: Model Setup and Data Loading
-     ```python
-     mdl = ErsiliaModel(model_ID)
-     mdl.serve()
+   ```python
+   mdl = ErsiliaModel(model_ID)
+   mdl.serve()
      
-     #load data
-     df = pd.read_csv(f"{dataset_path}")
+   #load data
+   df = pd.read_csv(f"{dataset_path}")
      
-     # Extract just the Drug column containing SMILES
-     smiles_df = df[[smiles_column]]
+   # Extract just the Drug column containing SMILES
+   smiles_df = df[[smiles_column]]
      
-     # Save smiles to new CSV file
-     smiles_df.to_csv("smiles_only.csv", index=False)
-     ```
+   # Save smiles to new CSV file
+   smiles_df.to_csv("smiles_only.csv", index=False)
+   ```
+   I extracted the smiles column from the inputed dataset saved them in a temporary file `smiles_only.csv`
 
 - Step 4: Prepare Output File
   ```python
@@ -299,7 +300,7 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
      "smiles_only.csv": "featurized_data.csv",
   }
   ```
-  Sets up a dictionary mapping input files to output files (currently just one pair)
+  Created another file to store featurizer output and set up a dictionary mapping input files to output files (currently just one pair)
 
 - Step 5: Run the Featurization
     ```python
@@ -315,7 +316,7 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
               raise FileNotFoundError(f"Input file '{input_file}' not found!")
     ```
 
-- Step 6: Clean Up Temporary Files
+- Step 6: Delete Temporary Files
   ```python
        try:
            os.remove("smiles_only.csv")
@@ -420,8 +421,9 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
     random_state=42       # Reproducibility
    )
    
-  model.fit(X_res, y_res, eval_set=[(X_valid, y_valid)], verbose=True)
+  model.fit(X_res, y_res)
   ```
+
   
 - Step 5: Make Predictions and View Results
   ```python
@@ -534,7 +536,7 @@ I also tested a different ML algorithm on the Morgan featurized data. Both Morga
   
   *colsample_bytree: Fraction of features randomly sampled for each tree.*
   
-  *scale_pos_weight: Weight for the positive (minority) class in imbalanced datasets. A high value (10) strongly penalizes misclassifying the minority class.*
+  *scale_pos_weight: Weight for the minority class in imbalanced datasets. A high value (10) strongly penalizes misclassifying the positive class.*
 
 ### 🔍 Model Performance Comparison (Morgan(XGBoost) vs ECE)
    | Metric       | Morgan Model | ECE Model  |
@@ -565,10 +567,16 @@ Morgan Model:
 
 #### 💡Overall Assessment:
    The ECE model outperforms the Morgan model across all four confusion matrix metrics. It has better detection of both positive and negative classes, with fewer errors in both directions.
+
    This suggests that the ECE approach might be capturing more meaningful patterns in the data for this classification task compared to the Morgan approach.
 
-   The models performs well, with an of ROC-AUC (0.88+) matching many published Tox21 challenge models, though teir PR-AUC (~0.63 - 0.67) shows room for improvement. While the current results are promising, 
-   it can be better thus they aren't satisfactory.
+   The models performs well, with an of ROC-AUC (0.88+) matching many published [Tox21 challenge models](https://www.frontiersin.org/research-topics/2954/tox21-challenge-to-build-predictive-models-of-nuclear-receptor-and-stress-response-pathways-as-media), though teir PR-AUC (~0.63 - 0.67) shows room for improvement.
+
+   This means that the models were about 88% accurate in figuring out whether a compound belonged to the positive or negative class. 
+
+   But because we have a lot more negative cases in our data than positive ones, the ROC curve might make our model seem better than it actually is. Even if the model wrongly classifies some negative cases, the overall rate of those mistakes (the False Positive Rate) will look small because there are just so many true negatives to begin with. Basically if it only correctly predicts true negatives and wrongly predicts all true positives, it's ROC-AUC might still be high. 
+
+   The Area Under the precision-recall Curve (PR-AUC) score is [0.68 - 0.64], which suggests that the models aren't too good at predictions for the minority class. This due to the imbalanced dataset. This means that I have to find another technique to simulate class balance, because while SMOTE and `scale-pos-weight` improved performance, theres still a huge error rate especially in predicting true positives as false negatives. 
 
 *Both models are more thoroughly evaluated in the [evaluation notebooks](https://github.com/MuoboTone/outreachy-contributions/tree/main/notebooks/model%20evaluation).* 
 
@@ -607,15 +615,20 @@ I evaluated both the Ersilia Compound Embeddings (ECE) model and the Morgan Fing
 
 #### 📝 Key Observations
 - Generalization Gap: Both models perform worse on external data (lower ROC-AUC/Accuracy), but ECE degrades less.
-- Precision ↑ + Recall ↓: Models are overly conservative in external data (prioritizing fewer false positives at the cost of missing true positives).
+- Precision ↑ + Recall ↓: Because the training data had way more negative samples than positive ones, both models default to guessing "non-toxic"  unless there is high confidence.
 - models are biased toward predicting "non-toxic" compounds due to the class imbalance in the training data.
-- PR-AUC Improvement: Suggests better precision-recall balance in external data (maybe positives are "easier" to identify).
+- PR-AUC Improvement: Precision-recall balance in external data improve a little (maybe positives are "easier" to identify).
 
 ### 📚 Recommendations
-1. Address Recall Drop: Use threshold tuning to balance precision/recall (e.g., lower decision threshold to increase recall).
-2. Cost-Benefit Analysis:
-   - If false positives are costly (e.g., toxic compounds mislabeled as safe), current precision is acceptable. 
-   - If false negatives are worse (e.g., missing toxic compounds), improve recall at the expense of precision.
+1. Tackling low Recall by adjust the decision threshold
+
+Right now, the model is missing too many positive cases (low recall), which limits its ability to detect actual toxic compounds. One straightforward way to fix this is by tweaking the decision threshold which is the cutoff point where your model flips from predicting "0" to "1." By default, many models use a 0.5 threshold, but that’s not always ideal. If you lower it (say, to 0.3), the model will flag more cases as positive, catching more true positives (better recall). But there’s a trade-off: you’ll also get more false positives (worse precision).
+
+2. Weighing the costs based on the scenario?
+
+Basically determining which errors hurt more. If detecting true positives (toxic compounds) is more important, then boosting recall is worth the cost of more false alarms. Otherwise the current precision of 0.88/0.78 might suffice. 
+
+In the real world for example drug discovery, the trade-offs between recall (catching true toxic compounds) and precision (avoiding false alarms) aren’t just technical, they’re about safety. Low recall allows toxic compounds slip through undetected while low precision means safe compounds are being classified as toxic. 
 
 
 
