@@ -83,6 +83,7 @@ Assay specific threshold wasn't specified for SR-MMP (which is a subset of Tox21
 ## Getting Started
 
 **Prerequisites**
+- Linux (or if on windows OS, install Linux subsystem(WSL)
 - [Miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install) or Anaconda installed on your system
 - [Docker](https://docs.docker.com/engine/install/)
 - Git Large File Storage (LFS) `conda install git-lfs -c conda-forge`
@@ -468,6 +469,17 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
   ```
   
 ### Results
+### Model Performance Metrics
+
+| **Metric**         | **Definition**                                                                 | **Formula**                                         | **When to Use**                                                                 |
+|--------------------|--------------------------------------------------------------------------------|-----------------------------------------------------|----------------------------------------------------------------------------------|
+| **Accuracy**       | Proportion of correct predictions out of all predictions                      | (TP + TN) / (TP + TN + FP + FN)                    | Good when classes are balanced                                                  |
+| **Precision**      | Of the predicted positives, how many were actually positive                   | TP / (TP + FP)                                      | Important when false positives are costly (e.g., spam detection)               |
+| **Recall (Sensitivity)** | Of the actual positives, how many did the model correctly identify     | TP / (TP + FN)                                      | Crucial when false negatives are costly (e.g., medical diagnosis)              |
+| **F1 Score**       | Harmonic mean of precision and recall                                          | 2 * (Precision * Recall) / (Precision + Recall)     | Useful when you need a balance between precision and recall                    |
+| **ROC-AUC**        | Area under the ROC curve (TPR vs FPR across thresholds)                       | AUC (from `roc_curve`)                              | Great for evaluating separability, especially in imbalanced datasets           |
+| **PR-AUC**         | Area under the Precision-Recall curve                                          | AUC (from `precision_recall_curve`)                 | More informative than ROC-AUC for imbalanced datasets                          |
+
 ### 🔍 Model Performance Comparison
 
 | Metric            | Class | Morgan Model | DrugTax Model|
