@@ -6,35 +6,36 @@
 * [Project Overview](#project-overview)
 * [Getting Started](#getting-started)
 * [Breakdown Of Implementation Process](#breakdown-of-implementation-process)
+* [Featurization with Ersilia Models](#featurization-with-ersilia-models)
+* [Model Building and Evaluation](#model-building-and-evaluation)
+* [Stretch Tasks](#stretch-task)
+* [References](#references)
 
 
 ## Introduction
 
 **What are Mitochondria?**
 
-A mitochondrion is a membrane-bound organelle found in the cytoplasm of almost all eukaryotic cells (cells with clearly defined nuclei), the primary function of which is to generate large quantities of energy in the form of adenosine triphosphate (ATP). Mitochondria are typically round to oval in shape and range in size from 0.5 to 10 μm. In addition to producing energy, mitochondria store calcium for cell signaling activities, generate heat, and mediate cell growth and death [1](https://www.britannica.com/science/mitochondrion).
+A mitochondrion is a membrane-bound organelle found in the cytoplasm of almost all eukaryotic cells (cells with clearly defined nuclei), the primary function of which is to generate large quantities of energy in the form of adenosine triphosphate (ATP). Mitochondria are typically round to oval in shape and range in size from 0.5 to 10 μm. In addition to producing energy, mitochondria store calcium for cell signaling activities, generate heat, and mediate cell growth and [death](https://www.britannica.com/science/mitochondrion).
 
 **Mitochondrial Toxicity: Definition and Impact**
 
 Mitochondrial Toxicity can be broadly defined as damage or dysfunction of the mitochondria, which can lead to various health problems, including muscle weakness, pancreatitis, and liver issues. 
-Mitochondrial function is critical for health. This is demonstrated both by the large number of diseases caused by mutations in genes found in the nucleus and mitochondria, and by the critical role that mitochondrial dysfunction plays in a large number of chronic diseases [2](https://pmc.ncbi.nlm.nih.gov/articles/PMC5681391/). 
+Mitochondrial function is critical for health. This is demonstrated both by the large number of diseases caused by mutations in genes found in the nucleus and mitochondria, and by the critical role that mitochondrial dysfunction plays in a large number of chronic [diseases](https://pmc.ncbi.nlm.nih.gov/articles/PMC5681391/). 
 
 Mitochondrial Dysfunction is linked to:
 - Myopathy (muscle disease)
 - Neurodegenerative Disorders (e.g Parkinson's disease)
-- Cancer
-
 
 ## Project Overview:
-This project builds a predictive machine learning model trained on the TOX 21's SR-MMP dataset, which contains qualitative toxicity measurements for 5,810 compounds. Given a drug SMILES string, the model predicts it's mitochondrial toxicity. 
-
+This project develops a predictive machine learning model trained on the Tox21 SR-MMP dataset, which contains qualitative mitochondrial toxicity annotations for 5,810 chemical compounds. Given a compound's SMILES representation, the model predicts its potential mitochondrial toxicity. 
 
 ## Dataset Overview
 
 There are 12 toxic substances in Tox21, including the stress response effects (SR) and the nuclear receptor effects (NR). The SR includes five types (ARE, HSE, ATAD5, MMP, p53), and NR includes seven types (ER-LBD, ER, Aromatase, AhR, AR, AR-LBD, PPAR). Both the SR and NR effects are closely related to human health. For example, the activation of nuclear receptors can disrupt endocrine system function, and the activation of stress response pathways can lead to liver damage or cancer. The Tox21 database contains the results of high-throughput screening for these 12 toxic [effects](https://www.mdpi.com/1420-3049/24/18/3383). 
 
 ### General Information
-- Source: [Tox21 Data Challenge](https://tripod.nih.gov/tox21/challenge/data.jsp)
+- Source: [Tox21 Data Task]([https://tripod.nih.gov/tox21/challenge/data.jsp](https://tdcommons.ai/single_pred_tasks/tox#tox21))
 - Task: Binary classification (predicting toxicity)
 - Target Variable: Toxicity label (1 = toxic, 0 = non-toxic)
 
@@ -123,7 +124,7 @@ conda list
 
 4. **Model Building & Evaluation**  
    - Trained binary classification models (XGBoost).  
-   - Addressed class imbalance via resampling/weighted loss.  
+   - Addressed class imbalance via resampling/weighted class.  
    - Evaluated performance using AUC-ROC, precision-recall, and F1-score.
 
 ### Environment Setup
@@ -140,7 +141,7 @@ pip install ersilia
 ```
 #### 1. Data Acquisition
 
-- Using [get_data.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/get_data.py)
+- Using [get_data.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/get_data.py) Script.
 
 ```python
 
@@ -236,7 +237,7 @@ assert len(train & val) == 0, "Train/Val overlap detected!"
 assert len(train & test) == 0, "Train/Test overlap detected!"
 assert len(val & test) == 0, "Val/Test overlap detected!"
 ```
-### Featurization with Ersilia Models
+## Featurization with Ersilia Models
 
 When selecting a featurizer for the Tox21 dataset, I considered several factors to ensure that the model can effectively capture the chemical information relevant to toxicity.
 - Substructure Sensitivity: The featurizer should capture chemical substructures and functional groups that are known to influence toxicity.
@@ -265,15 +266,15 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
         import os
         import pandas as pd
   ```
-  - Step 2: Define the Featurization Function
-    ```python
+- Step 2: Define the Featurization Function
+  ```python
         def featurize(model_ID, dataset_path, smiles_column):
-    ```
-      The function takes three parameters:
+  ```
+  The function takes three parameters:
       
-      - model_ID - the identifier for the specific Ersilia model to use
-      - dataset_path - path to the input dataset CSV file
-      - smiles_column - name of the column containing SMILES strings in the dataset
+   - model_ID - the identifier for the specific Ersilia model to use
+   - dataset_path - path to the input dataset CSV file
+   - smiles_column - name of the column containing SMILES strings in the dataset
 
 - Step 3: Model Setup and Data Loading
      ```python
@@ -291,27 +292,27 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
      ```
 
 - Step 4: Prepare Output File
-     ```python
-     #create an empty CSV file to store featurized data
-     pd.DataFrame().to_csv('featurized_data.csv', index=False)
-     datasets = {
-               "smiles_only.csv": "featurized_data.csv",
-           }
-     ```
+  ```python
+  #create an empty CSV file to store featurized data
+  pd.DataFrame().to_csv('featurized_data.csv', index=False)
+  datasets = {
+     "smiles_only.csv": "featurized_data.csv",
+  }
+  ```
   Sets up a dictionary mapping input files to output files (currently just one pair)
 
 - Step 5: Run the Featurization
     ```python
-          for input_file, output_file in datasets.items():
-              # Check if the input file exists
-              if os.path.exists(input_file): 
-
-                  # Run the model/featurization on the input file
-                  # Generating output to the specified output file
-                  mdl.run(input=input_file, output=output_file)
-              else:
-                  # Raises an error if the input file is missing
-                  raise FileNotFoundError(f"Input file '{input_file}' not found!")
+    for input_file, output_file in datasets.items():
+    
+    # Check if the input file exists
+       if os.path.exists(input_file): 
+       # Run the model/featurization on the input file
+       # Generating output to the specified output file
+             mdl.run(input=input_file, output=output_file)
+       else:
+             # Raises an error if the input file is missing
+              raise FileNotFoundError(f"Input file '{input_file}' not found!")
     ```
 
 - Step 6: Clean Up Temporary Files
@@ -353,40 +354,39 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
 #### DrugTax Output Format
 | Column Name | Description |
 |-------------|-------------|
-| Key | Unique identifier for each compound |
-| input | SMILES string representation of the compound |
-| feature_1 | First taxonomic or molecular feature (binary 0/1) |
-| feature_2 | Second taxonomic or molecular feature (binary 0/1) |
+| **Key** | Unique identifier for each compound |
+| **input** | SMILES string representation of the compound |
+| **organic** | First taxonomic or molecular feature (binary 0/1) |
+| **inorganic** | Second taxonomic or molecular feature (binary 0/1) |
 | ... | ... |
-| feature_163 | Last taxonomic or molecular feature (binary 0/1) |
+| **char_/** | Last taxonomic or molecular feature (binary 0/1) |
 
 *Note: DrugTax output includes 163 features representing taxonomy classification (organic/inorganic), subclasses, and counts of chemical elements (carbons, nitrogens, etc.).*
   
-### Model Building & Evaluation
+## Model Training and Evaluation
 
 **ML Algorithm**
-
 1. Morgan Fingerprint Model
      
      i. FLAML AutoML - estimators (LightGBM and RandomForest)
      
-     ii. XGBoostClassifier
+     ii. RandomForestClassifier
      
 2. Drug Tax Model
-       
+
      i. FLAML AutoML - estimator (LightGBM)
 
-#### Code Breakdown: [Model Training](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/Model%20Training/train_morgan_counts_model.ipynb)
+#### Code Breakdown: [Model Training](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/Model%20Training)
 
 - Step 1: Import Required Libraries
-      ```python
-      from imblearn.over_sampling import SMOTE
-      from xgboost import XGBClassifier
-      import pandas as pd
-      from sklearn.metrics import classification_report
-      import joblib
-      from tdc import Evaluator
-      ```
+  ```python
+  from imblearn.over_sampling import SMOTE
+  from sklearn.ensemble import RandomForestClassifier
+  import pandas as pd
+  from sklearn.metrics import classification_report
+  import joblib
+  from tdc import Evaluator
+  ```
    
 - Step 2: Load and prepare data.
    ```python
@@ -404,52 +404,34 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
       
 - Step 3: Handle Class Imbalance with SMOTE
   ```python
-      # Use SMOTE to oversample minority class
-      smote = SMOTE(random_state=42)
-      X_res, y_res = smote.fit_resample(X_train, y_train)
+  # Use SMOTE to oversample minority class
+  smote = SMOTE(random_state=42)
+  X_res, y_res = smote.fit_resample(X_train, y_train)
   ```
   SMOTE (Synthetic Minority Over-sampling Technique) is used to address class imbalance in datasets. It works by generating synthetic samples of the minority class rather than simply duplicating existing ones.
 
-- Step 4: Initialize and Train XGBoost Model
+- Step 4: Initialize and Train RandomForest Model
   ```python
-     # Train the model
-     model = XGBClassifier(
-     n_estimators=200,
-     max_depth=7,               # Balance complexity
-     learning_rate=0.05,        # Slower learning
-     scale_pos_weight=8,        # Adjust for class imbalance 
-     random_state=42,
-     early_stopping_rounds=10,  # Prevent overfitting
-     )
+  # Train the model
+  model = RandomForestClassifier(
+    n_estimators=200,     # Number of trees
+    max_depth=7,          # Maximum tree depth
+    class_weight='balanced',  # Automatically adjusts for imbalanced classes
+    random_state=42       # Reproducibility
+   )
    
-     model.fit(X_res, y_res, eval_set=[(X_valid, y_valid)], verbose=True)
+  model.fit(X_res, y_res, eval_set=[(X_valid, y_valid)], verbose=True)
   ```
-  | Parameter             | Value  | Meaning |
-  |-------------------------|--------|-------------------------|
-  | `n_estimators`          | 200    | Number of decision trees (boosting rounds). More trees = stronger model but slower training. |
-  | `max_depth`             | 7      | Maximum depth of each tree. Deeper trees learn complex patterns but may overfit. |
-  | `learning_rate`    | 0.05   | How fast the model learns. Lower = more careful updates (better generalization but slower training).|
-  | `random_state`          | 42     | Fixes randomness for reproducible results (e.g., same output every run). |
-  | `early_stopping_rounds` | 10     | Stops training if validation score doesn't improve for 10 rounds (prevents overfitting). |
-
-  *Why These Values?*
-      
-  *n_estimators=200: A moderate number for balance between performance and speed.*
-      
-  *max_depth=7: Deep enough to learn relationships but not too deep to overfit.*
-      
-  *learning_rate=0.05: Small steps to avoid overshooting the best solution.*
-      
-  *early_stopping_rounds=10: Gives the model a few chances to improve before stopping.*
   
 - Step 5: Make Predictions and View Results
-     ```python
-     # Get prediction result
-      y_test_pred = model.predict(X_test)
+  ```python
+  # Get prediction result
+  y_test_pred = model.predict(X_test)
    
-      # Display metrics
-      print(classification_report(y_test, y_test_pred))
-     ```
+  # Display metrics
+  print(classification_report(y_test, y_test_pred))
+  ```
+  
 - Step 6: Get Evaluation Metrics
      ```python
      from typing import Dict, Any
@@ -478,11 +460,11 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
      ```
 
 - Step 7. Save the Trained Model
-     ```python
-      # Save model
-      model_filename = 'Morgan_trained_model.joblib'
-      joblib.dump(model, model_filename)
-     ```
+  ```python
+  model_filename = 'Morgan_trained_model.joblib'
+  joblib.dump(model, model_filename)
+  ```
+  
 ### Results
 ### 🔍 Model Performance Comparison
 
@@ -515,14 +497,137 @@ These results led me use a more complex embedding to featurize my dataset.
 #### Ersilia Embeddings Output Format
 | Column Name | Description |
 |-------------|-------------|
-| Key | Unique identifier for each compound |
-| input | SMILES string representation of the compound |
-| feature_0000 | First dimension of the embedding vector (continuous float) |
-| feature_0001 | Second dimension of the embedding vector (continuous float) |
+| **Key** | Unique identifier for each compound |
+| **input** | SMILES string representation of the compound |
+| **feature_0000** | First dimension of the embedding vector (continuous float) |
+| **feature_0001** | Second dimension of the embedding vector (continuous float) |
 | ... | ... |
-| feature_1023 | Last dimension of the embedding vector |
-  
+| **feature_1023** | Last dimension of the embedding vector |
 
+I also tested a different ML algorithm on the Morgan featurized data. Both Morgan and the Ersilia Compound Embeddings (ECE) model with the best performance across all metrics was trained using XGBoost with the follwing additional configurations: 
+
+  | Parameter               |   ECE model| Morgan Model|
+  |-------------------------|--------|--------|
+  | `n_estimators`          | 300    | 200    |
+  | `max_depth`             | 7      | 7   |
+  | `learning_rate`         | 0.05   | 0.05    |
+  | `gamma`                 | 0.5    | Default  |
+  | `subsample`             | 0.8    | Default |
+  | `colsample_bytree`      | 0.8    | Default|
+  | `random_state`          | 42     | 42   |
+  | `scale_pos_weight`      | 10     | 8   |
+  | `early_stopping_rounds` | 10     | 10   |
+
+  *Why These Values?*
+      
+  *n_estimators: Number of decision trees. More trees = stronger model but slower training.*
+      
+  *max_depth: Maximum depth of each tree. Deeper trees learn complex patterns but may overfit. 7 is deep enough to learn relationships but not too deep to overfit.*
+      
+  *learning_rate: How fast the model learns. Lower = more careful updates (better generalization but slower training). A value of 0.05 means small steps to avoid overshooting the best solution.*
+      
+  *early_stopping_rounds: Stops training if validation score doesn't improve for 10 rounds (prevents overfitting). Value 10 gives the model a few chances to improve before stopping.*
+
+  *gamma: Minimum loss reduction required to split a node (regularization). Helps control overfitting.*
+  
+  *subsample: Fraction of training data randomly sampled for each tree. Using 80% of the data per tree introduces diversity, reducing overfitting*
+  
+  *colsample_bytree: Fraction of features randomly sampled for each tree.*
+  
+  *scale_pos_weight: Weight for the positive (minority) class in imbalanced datasets. A high value (10) strongly penalizes misclassifying the minority class.*
+
+### 🔍 Model Performance Comparison (Morgan(XGBoost) vs ECE)
+   | Metric       | Morgan Model | ECE Model  |
+   |--------------|--------------|------------|
+   | ROC-AUC      | 0.8859       | **0.8897** |
+   | PR-AUC       | 0.6369       | **0.6754** |
+   | Accuracy     | 0.8509       | **0.8718** |
+   | Precision    | 0.5161       | **0.5684** |
+   | Recall       | 0.7072       | **0.7348** |
+   | F1 Score     | 0.5967       | **0.6410** |
+
+Their performance can be closely evaluated using the confusion matrix plots:
+![ECE cong](https://github.com/user-attachments/assets/118a7720-20fa-4ca7-a45b-997b6ac76a1a)
+![output mogan conf](https://github.com/user-attachments/assets/d20aca65-ea80-40eb-9a50-721af85d36e0)
+
+#### 📝 Key Observations
+ECE Model:
+- True Negatives (TN): 869 (correctly identified negatives)
+- False Positives (FP): 112 (incorrectly labeled as positive)
+- False Negatives (FN): 46 (incorrectly labeled as negative)
+- True Positives (TP): 135 (correctly identified positives)
+
+Morgan Model:
+- True Negatives (TN): 859 (correctly identified negatives)
+= False Positives (FP): 120 (incorrectly labeled as positive)
+= False Negatives (FN): 53 (incorrectly labeled as negative)
+- True Positives (TP): 128 (correctly identified positives)
+
+#### 💡Overall Assessment:
+   The ECE model outperforms the Morgan model across all four confusion matrix metrics. It has better detection of both positive and negative classes, with fewer errors in both directions.
+   This suggests that the ECE approach might be capturing more meaningful patterns in the data for this classification task compared to the Morgan approach.
+
+   The models performs well, with an of ROC-AUC (0.88+) matching many published Tox21 challenge models, though teir PR-AUC (~0.63 - 0.67) shows room for improvement. While the current results are promising, 
+   it can be better thus they aren't satisfactory.
+
+*Both models are more thoroughly evaluated in the [evaluation notebooks](https://github.com/MuoboTone/outreachy-contributions/tree/main/notebooks/model%20evaluation).* 
+
+## Stretch Task
+In order to further evaluate both models, I downloaded an external dataset published on [American Chemical Society](https://acs.figshare.com/articles/dataset/Evaluation_of_in_Vitro_Mitochondrial_Toxicity_Assays_and_Physicochemical_Properties_for_Prediction_of_Organ_Toxicity_Using_228_Pharmaceutical_Drugs/7492784?file=13881770). The article studies whether mitochondrial toxicity screening assays can effectively predict drug-induced organ damage in humans, particularly for the liver, heart, and kidney. The dataset contained 228 compounds, they studied (73 hepatotoxicants, 46 cardiotoxicants, 49 nephrotoxicants, and 60 non-toxic compounds) along with their measured mitochondrial toxicity results from both screening assays (isolated rat liver mitochondria and glucose-galactose grown HepG2 cells).
+
+I selected 112 compounds from the dataset with 50 positive(toxic) and 62 negative(non-toxic). I tried to eliminate class imbalance and get sufficient examples of both toxic and non-toxic compounds. I ensured non of the compounds were present in my tox_21 sr-mmp dataset. So these are all compounds my model hasn't seen before.
+
+I evaluated both the Ersilia Compound Embeddings (ECE) model and the Morgan Fingerprint model on the external dataset.
+
+#### Results
+
+| Metric       | Morgan Model | ECE Model  | 
+|--------------|--------------|------------|
+| ROC-AUC      | 0.8332       | **0.8574** |
+| PR-AUC       | 0.7329       | **0.7691** |
+| Accuracy     | 0.7411       | 0.7411     |
+| Precision    | **0.8000**   | 0.7838     | 
+| Recall       | 0.5600       | **0.5800** |
+| F1 Score     | 0.6588       | **0.6667** |
+
+#### Model Performance Comparison: Test Data vs External Validation
+
+| Metric       | Morgan (Test) | Morgan (External) | ECE (Test) | ECE (External) |
+|--------------|---------------|-------------------|------------|----------------|
+| ROC-AUC      | 0.8859        | 0.8332 (-5.95%)   | 0.8897     | 0.8574 (-3.63%) |
+| PR-AUC       | 0.6369        | 0.7329 (+15.07%)  | 0.6754     | 0.7691 (+13.87%)|
+| Accuracy     | 0.8509        | 0.7411 (-12.90%)  | 0.8718     | 0.7411 (-15.00%)|
+| Precision    | 0.5161        | 0.8000 (+55.01%)  | 0.5684     | 0.7838 (+37.90%)|
+| Recall       | 0.7072        | 0.5600 (-20.81%)  | 0.7348     | 0.5800 (-21.07%)|
+| F1           | 0.5967        | 0.6588 (+10.41%)  | 0.6410     | 0.6667 (+4.00%) |
+
+#### 📊 Confusion matrices: 
+![ECE external conf](https://github.com/user-attachments/assets/e6415189-467e-46af-a0a2-7400be51b5b8)
+![morgan external conf](https://github.com/user-attachments/assets/8311f112-4830-41e8-8f6e-1ca4c140868b)
+
+#### 📝 Key Observations
+- Generalization Gap: Both models perform worse on external data (lower ROC-AUC/Accuracy), but ECE degrades less.
+- Precision ↑ + Recall ↓: Models are overly conservative in external data (prioritizing fewer false positives at the cost of missing true positives).
+- models are biased toward predicting "non-toxic" compounds due to the class imbalance in the training data.
+- PR-AUC Improvement: Suggests better precision-recall balance in external data (maybe positives are "easier" to identify).
+
+### 📚 Recommendations
+1. Address Recall Drop: Use threshold tuning to balance precision/recall (e.g., lower decision threshold to increase recall).
+2. Cost-Benefit Analysis:
+   - If false positives are costly (e.g., toxic compounds mislabeled as safe), current precision is acceptable. 
+   - If false negatives are worse (e.g., missing toxic compounds), improve recall at the expense of precision.
+
+
+
+
+
+
+### References
+
+- [Attene-Ramos, M. S., Huang, R., Michael, S., Witt, K. L., Richard, A., Tice, R. R., Simeonov, A., Austin, C. P., & Xia, M. (2015). Profiling of the Tox21 chemical collection for mitochondrial function to identify compounds that acutely decrease mitochondrial membrane potential. Environmental Health Perspectives, 123(1), 49-56.](https://pmc.ncbi.nlm.nih.gov/articles/PMC4286281/)
+- [Yuan, Q.; Wei, Z.; Guan, X.; Jiang, M.; Wang, S.; Zhang, S.; Li, Z. Toxicity Prediction Method Based on Multi-Channel Convolutional Neural Network. Molecules 2019, 24, 3383.](https://doi.org/10.3390/molecules24183383)
+- [Rana, Payal; Aleo, Michael D.; Gosink, Mark; Will, Yvonne (2018). Evaluation of in Vitro Mitochondrial Toxicity Assays and Physicochemical Properties for Prediction of Organ Toxicity Using 228 Pharmaceutical Drugs. ACS Publications.](https://doi.org/10.1021/acs.chemrestox.8b00246.s001https://acs.figshare.com/articles/dataset/Evaluation_of_in_Vitro_Mitochondrial_Toxicity_Assays_and_Physicochemical_Properties_for_Prediction_of_Organ_Toxicity_Using_228_Pharmaceutical_Drugs/7492784?file=13881770)
+- [Meyer JN, Chan SSL. Sources, mechanisms, and consequences of chemical-induced mitochondrial toxicity. Toxicology. 2017 Nov 1;391:2-4. doi: 10.1016/j.tox.2017.06.002. Epub 2017 Jun 13. PMID: 28627407; PMCID: PMC5681391.](https://pmc.ncbi.nlm.nih.gov/articles/PMC5681391/)
   
 
 
