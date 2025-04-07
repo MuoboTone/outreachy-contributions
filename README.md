@@ -36,6 +36,7 @@ There are 12 toxic substances in Tox21, including the stress response effects (S
 
 ### General Information
 - Source: [Tox21 Data Task]([https://tripod.nih.gov/tox21/challenge/data.jsp](https://tdcommons.ai/single_pred_tasks/tox#tox21))
+- Original Paper: Editorial: [Tox21 Challenge to Build Predictive Models of Nuclear Receptor and Stress Response Pathways As Mediated by Exposure to Environmental Toxicants and Drugs](https://www.frontiersin.org/journals/environmental-science/articles/10.3389/fenvs.2017.00003/full)
 - Task: Binary classification (predicting toxicity)
 - Target Variable: Toxicity label (1 = toxic, 0 = non-toxic)
 
@@ -140,6 +141,7 @@ pip install pyTDC
 # Install Ersilia Model Hub for featurization
 pip install ersilia
 ```
+
 #### 1. Data Acquisition
 
 - Using [get_data.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/get_data.py) Script.
@@ -177,6 +179,9 @@ full_data.to_csv("tox21_full.csv", index=False)
 
 #outputs are CSV files for each split and the entire dataset
 ```
+- Output files are saved in the same directory as the Script. Example:
+  `Scripts/tox21_full.csv`
+  
 #### 2. Exploratory Data Analysis (EDA)
 - [initial_EDA.ipynb](https://github.com/MuoboTone/outreachy-contributions/blob/main/notebooks/exploratory%20analysis/initial_EDA.ipynb)
 ```python
@@ -190,6 +195,7 @@ sns.heatmap(df.isnull(), cbar=False, cmap="viridis")
 print(df.isnull().sum())
 plt.show()
 ```
+Output shows that there are no null values in any column.
 ```output
 Data columns (total 3 columns):
  #   Column   Non-Null Count  Dtype  
@@ -261,6 +267,9 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
 
 #### Code Breakdown: [featurize.py](https://github.com/MuoboTone/outreachy-contributions/blob/main/scripts/featurize.py)
 
+*Before running the featurization script, ensure the Ersilia model is fetched from the Ersilia Docker Hub*
+Run `ersilia -v fetch {model_ID}` in the command line to view logs and identify any errors that might occur. 
+
 - Step 1: Import Required Libraries
   ```python
         from ersilia import ErsiliaModel
@@ -302,7 +311,7 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
   }
   ```
   Created another file to store featurizer output and set up a dictionary mapping input files to output files (currently just one pair)
-
+  
 - Step 5: Run the Featurization
     ```python
     for input_file, output_file in datasets.items():
@@ -316,7 +325,20 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
              # Raises an error if the input file is missing
               raise FileNotFoundError(f"Input file '{input_file}' not found!")
     ```
-
+- Alternative step: You can choose to merge the featurized dataset with the original dataset for easy access, although it might become a very large file. This was my approach, although not completely               necessary.
+    ```python
+    original_dataset = df
+    featurized = pd.read_csv("featurized_data.csv")
+    merged = pd.merge(
+                original_dataset,
+                featurized,
+                left_on='Drug',
+                right_on='input',
+                how='left'
+                )
+    
+    merged.to_csv("featurized_data_merged.csv", index=False)
+    ```
 - Step 6: Delete Temporary Files
   ```python
        try:
@@ -382,47 +404,53 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
 
 - Step 1: Import Required Libraries
   ```python
-  from imblearn.over_sampling import SMOTE
-  from sklearn.ensemble import RandomForestClassifier
-  import pandas as pd
-  from sklearn.metrics import classification_report
-  import joblib
-  from tdc import Evaluator
+   from imblearn.over_sampling import SMOTE
+   import pandas as pd
+   from flaml import AutoML
+   from tdc import Evaluator
+   from sklearn.metrics import classification_report
+   import joblib
   ```
    
 - Step 2: Load and prepare data.
    ```python
-   # Get data
-   train_data = pd.read_csv('../../data/MorganCount/tox21_train_featurized.csv').dropna()
-   valid_data = pd.read_csv('../../data/MorganCount/tox21_valid_featurized.csv').dropna()
-   test_data = pd.read_csv('../../data/MorganCount/tox21_test_featurized.csv').dropna()
-   
-   # Get X(features) and Y(target)
-   X_train, y_train = train_data.filter(regex='^dim_.*'), train_data['Y']
-   X_test, y_test = test_data.filter(regex='^dim_.*'), test_data['Y']
-   X_valid, y_valid = valid_data.filter(regex='^dim_.*'), valid_data['Y']
+   #Get data
+   columns_to_drop = ['Drug_ID', 'Drug', 'Y', 'key', 'input']
+   train_data = pd.read_csv('../../data/DrugTax/train_drugTax_featurized.csv').dropna()
+   valid_data = pd.read_csv('../../data/DrugTax/valid_drugTax_featurized.csv').dropna()
+   test_data = pd.read_csv('../../data/DrugTax/test_drugTax_featurized.csv').dropna()
+
+   #get splits
+   X_train, y_train = train_data.drop(columns=columns_to_drop).filter(regex='^(?!char_[.,=#@+\\-\\[\\(\\\\\/])'), train_data['Y']
+   X_test, y_test = test_data.drop(columns=columns_to_drop).filter(regex='^(?!char_[.,=#@+\\-\\[\\(\\\\\/])'), test_data['Y']
+   X_valid, y_valid = valid_data.drop(columns=columns_to_drop).filter(regex='^(?!char_[.,=#@+\\-\\[\\(\\\\\/])'), valid_data['Y']
    ```
-    selected all columns starting with "dim_" from the featurized dataset.
+   From my merged dataset, I dropped unneeded columns that aren't features. Then I got an error message saying some feature column names contained characters that are not strings, so I filtered those out using Regex. 
       
 - Step 3: Handle Class Imbalance with SMOTE
   ```python
-  # Use SMOTE to oversample minority class
-  smote = SMOTE(random_state=42)
-  X_res, y_res = smote.fit_resample(X_train, y_train)
+   #Use smote to oversample minority class
+   smote = SMOTE(random_state=42)
+   X_res, y_res = smote.fit_resample(X_train, y_train)
   ```
   SMOTE (Synthetic Minority Over-sampling Technique) is used to address class imbalance in datasets. It works by generating synthetic samples of the minority class rather than simply duplicating existing ones.
 
-- Step 4: Initialize and Train RandomForest Model
+- Step 4: Initialize and Train the model; for the drug tax model, I used AutoML which is said to choose the best estimator for the model based on its performance.
+  During this process, I tried the LightGBM, RandomForest, and XGBoost estimators, none of which had a significant improvement over the others. 
   ```python
-  # Train the model
-  model = RandomForestClassifier(
-    n_estimators=200,     # Number of trees
-    max_depth=7,          # Maximum tree depth
-    class_weight='balanced',  # Automatically adjusts for imbalanced classes
-    random_state=42       # Reproducibility
-   )
+  #Train model using Flaml AutoML
+
+   model_config = {
+       'task' : 'classification',  # classification 
+       'time_budget' : 200,    # time budget in seconds
+       'metric' : 'f1', # main metric to be optimized
+       'estimator_list' : ['lgbm', 'rf'] , #list of ML algorithms used for model training
+       'eval_method': 'cv',  
+       'n_splits': 5,
+   }
    
-  model.fit(X_res, y_res)
+   model = AutoML()
+   model.fit(X_res, y_res, **model_config) 
   ```
 
   
@@ -436,10 +464,10 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
   ```
   
 - Step 6: Get Evaluation Metrics
-     ```python
-     from typing import Dict, Any
-     def evaluate_model(y_true, y_pred_proba, threshold: float = 0.5) -> Dict[str, float]:
-          metrics = {
+  ```python
+  from typing import Dict, Any
+  def evaluate_model(y_true, y_pred_proba, threshold: float = 0.5) -> Dict[str, float]:
+     metrics = {
               'ROC-AUC': {'name': 'ROC-AUC', 'kwargs': {}},
               'PR-AUC': {'name': 'PR-AUC', 'kwargs': {}},
               'Accuracy': {'name': 'Accuracy', 'kwargs': {'threshold': threshold}},
@@ -456,16 +484,20 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
           
           return results
    
-      y_pred_proba = model.predict_proba(X_test)[:, 1]
-      y_true = y_test
+  y_pred_proba = model.predict_proba(X_test)[:, 1]
+  y_true = y_test
       
-      evaluation_results = evaluate_model(y_true, y_pred_proba)
-     ```
-
+  evaluation_results = evaluate_model(y_true, y_pred_proba)
+  ```
+   I used PyTDC `Evaluator` package to get the evaluation metrics scores.
+  
 - Step 7. Save the Trained Model
   ```python
-  model_filename = 'Morgan_trained_model.joblib'
-  joblib.dump(model, model_filename)
+   #Save model
+   
+   model = model
+   model_filename = 'Drugtax_trained_model.joblib'
+   joblib.dump(model, model_filename)
   ```
   
 ### Results
@@ -494,8 +526,9 @@ When selecting a featurizer for the Tox21 dataset, I considered several factors 
 | **ROC-AUC**       |       | 0.82    | 0.89 |
 
 **Observations**
-- Both models had room for improvement. Although the Morgan Model has a higher ROC-AUC score(0.89-0.82).
-- Precision and recall for both models is poor leading to a low overall F1 score (0.48(Drugtax) and 0.53 (Morgan))
+- Both ROC-AUC scores of 0.89 and 0.82 are considered high going by the performance of TOX21 data challenge models, but those aren't the only important metrics.
+- Both the models had below-average F1-Score, indicating that both Precision and Recall are below average for the minority class(1). 
+- These results are unsatisfactory for an issue as crucial as toxicity prediction. 
 
 These results led me use a more complex embedding to featurize my dataset. 
 
